@@ -16,35 +16,33 @@ def read_image(dataset_tag, extension=".png", onehot=False, reload=False, cache=
     if not reload and Path(cache_npz).exists():
         print(f"Reuse cached array {cache_npz}")
         cache = np.load(cache_npz)
-        return cache['x'], cache['y']
+        x, y = cache['x'], cache['y']
 
-    # pushd
-    os.chdir(image_dir)
-    im_files = sorted(os.listdir("."))
-    images = [plt.imread(f)[:, :, :3] for f in im_files if f.endswith(extension)]
-    print(f'Number of {dataset_tag} images:', len(images))
-    x = np.array(images)
-    print(f'x_{dataset_tag} shape:', x.shape)
-    # popd
-    os.chdir(pwd)
+    else:
+        # pushd
+        os.chdir(image_dir)
+        im_files = sorted(os.listdir("."))
+        images = [plt.imread(f)[:, :, :3] for f in im_files if f.endswith(extension)]
+        print(f'Number of {dataset_tag} images:', len(images))
+        x = np.array(images)
+        print(f'x_{dataset_tag} shape:', x.shape)
+        # popd
+        os.chdir(pwd)
 
-    # Read training labels
-    y_labels = np.genfromtxt(label_file, delimiter=',')
-    print(f'Number of training labels equals number of {dataset_tag} images:',
-          len(y_labels) == x.shape[0])
-
-    # Do we want to use one-hot encoding for labels
-    if onehot:
-        y = keras.utils.to_categorical(y_labels, num_classes=2)
+        # Read training labels
+        y = np.genfromtxt(label_file, delimiter=',')
+        print(f'Number of training labels equals number of {dataset_tag} images:',
+            len(y) == x.shape[0])
+    
         if cache:
             np.savez_compressed(cache_npz, x=x, y=y)
             print(f"Cached saved as {cache_npz}")
-        return x, y
-    else:
-        if cache:
-            np.savez_compressed(cache_npz, x=x, y=y_labels)
-            print(f"Cached saved as {cache_npz}")
-        return x, y_labels
+        
+    # Do we want to use one-hot encoding for labels
+    if onehot:
+        y = keras.utils.to_categorical(y, num_classes=2)
+    
+    return x, y
 
 
 def inject_config():
